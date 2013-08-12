@@ -1,30 +1,23 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Game : MonoBehaviour {
-	
-	public static Game Instance;
-	
-	public bool mbInGame;
+/// <summary>
+/// Loads and unloads game state.
+/// </summary>
+public static class Game
+{
+    private static GameObject level = null;
 
-	// Use this for initialization
-	void Start () {
-		Instance = this;
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-	
-	public void StartGame()
-	{
-		mbInGame = true;
-	}
-	
-	public void EndGame()
-	{
-		mbInGame = false;
-	}
+    /// <summary>
+    /// Loads the level prefab and spawns the player characters, etc.
+    /// </summary>
+	public static void LoadLevel(string levelName)
+    {
+        level = (GameObject)GameObject.Instantiate(Resources.Load("Levels/" + levelName), Vector3.zero, Quaternion.identity);
+    }
+
+    public static void UnloadLevel()
+    {
+        GameObject.Destroy(level);
+    }
 }

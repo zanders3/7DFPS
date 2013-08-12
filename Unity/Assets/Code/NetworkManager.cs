@@ -6,16 +6,11 @@ public class NetworkManager : MonoBehaviour {
 	public static NetworkManager Instance;
 
 	// Use this for initialization
-	void Start () {
+	void Start () 
+    {
 		Instance = this;
-	
 	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-	
+
 	// server
 	void OnPlayerConnected(NetworkPlayer zPlayer)
 	{

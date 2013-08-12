@@ -25,8 +25,8 @@ public class FrontEnd : MonoBehaviour {
 	private HostData[] mHostList;
 
 	// Use this for initialization
-	void Start () {
-		
+	void Start() 
+    {	
 		Instance = this;
 		mBlockWidth = Screen.width / 20;
 		mBlockHeight = Screen.height / 10;
@@ -34,11 +34,6 @@ public class FrontEnd : MonoBehaviour {
 		mPlayerName = "Player";
 		mGameName = "7DFPSAwesomeness";
 		MasterServer.RequestHostList("7DFPSAwesomeness");
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
 	}
 	
 	void OnGUI()
