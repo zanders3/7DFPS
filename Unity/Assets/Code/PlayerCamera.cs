@@ -3,6 +3,7 @@ using System.Collections;
 
 /// <summary>
 /// Implements the first person player camera and player movement.
+/// Syncs player state with the server.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerCamera : MonoBehaviour 
@@ -24,11 +25,20 @@ public class PlayerCamera : MonoBehaviour
 
 	void Start()
 	{
+        if (!networkView.isMine)
+        {
+            Head.gameObject.SetActive(false);
+            return;
+        }
+
 		Screen.lockCursor = true;
 	}
 
 	void Update()
 	{
+        if (!networkView.isMine)
+            return;
+
 		upAngle = Mathf.Clamp(upAngle - Input.GetAxis("Mouse Y"), -90.0f, 90.0f);
 		rotateAngle += Input.GetAxis("Mouse X");
 		Head.rotation = Quaternion.AngleAxis(rotateAngle, Vector3.up) * Quaternion.AngleAxis(upAngle, Vector3.right);

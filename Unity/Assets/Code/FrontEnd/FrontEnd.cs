@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class FrontEnd : MonoBehaviour {
-	
+public class FrontEnd : MonoBehaviour 
+{	
 	public static FrontEnd Instance;
 	private Rect mRect;
 	private int mBlockWidth;
@@ -13,8 +13,8 @@ public class FrontEnd : MonoBehaviour {
 		title,
 		host,
 		join,
-		lobby,
 		results,
+        ingame
 	}
 	public eFrontEndState mState;
 	
@@ -51,12 +51,12 @@ public class FrontEnd : MonoBehaviour {
 		case eFrontEndState.join:
 			DrawJoin();
 			break;
-		case eFrontEndState.lobby:
-			DrawLobby();
-			break;
 		case eFrontEndState.results:
 			DrawResults();
 			break;
+        case eFrontEndState.ingame:
+            DrawScoreboard();
+            break;
 		}
 	}
 	
@@ -96,6 +96,17 @@ public class FrontEnd : MonoBehaviour {
 			SetState(eFrontEndState.title);
 		}
 	}
+
+    void DrawScoreboard()
+    {
+        if (LevelState.Instance != null)
+        {
+            GUILayout.BeginVertical();
+            foreach (Player player in LevelState.Instance.Players)
+                GUILayout.Label(player.Name);
+            GUILayout.EndVertical();
+        }
+    }
 	
 	void DrawJoin()
 	{
@@ -121,25 +132,6 @@ public class FrontEnd : MonoBehaviour {
 		}
 	}
 	
-	void DrawLobby()
-	{
-		mRect.Set(mBlockWidth, mBlockHeight, mBlockWidth * 4, mBlockHeight);
-		GUI.Label(mRect, "Lobby");
-		mRect.y += mRect.height;
-		if (Network.isServer)
-		{
-			if (GUI.Button(mRect, "Start"))
-			{
-				StartGame();
-			}
-		}
-		mRect.x += mRect.width;
-		if (GUI.Button(mRect, "Back"))
-		{
-			Network.Disconnect();
-		}
-	}
-	
 	void DrawResults()
 	{
 	}
@@ -150,17 +142,58 @@ public class FrontEnd : MonoBehaviour {
 		MasterServer.RegisterHost("7DFPSAwesomeness", mGameName); 
 	}
 	
-	void StartGame()
-	{
-		Debug.Log("Starting Game");
-	}
-	
 	void JoinGame()
 	{
 	}
 	
 	public void SetState(eFrontEndState zState)
 	{
+        if (mState == zState)
+            return;
+
 		mState = zState;
+
+        if (zState == eFrontEndState.ingame)
+            LevelLoader.Load("TestLevel");
+        else
+            LevelLoader.Unload();
 	}
+
+    // Network events
+
+    void OnServerInitialized()
+    {
+        Debug.Log("Server up and running!");
+        FrontEnd.Instance.SetState(FrontEnd.eFrontEndState.ingame);
+    }
+    
+    // client
+    void OnConnectedToServer()
+    {
+        Debug.Log("Connected to server");
+        FrontEnd.Instance.SetState(FrontEnd.eFrontEndState.ingame);
+    }
+    
+    void OnFailedToConnect(NetworkConnectionError zError)
+    {
+        Debug.Log ("Failed to connect to server: " + zError);
+        FrontEnd.Instance.SetState(FrontEnd.eFrontEndState.title);
+    }
+    
+    // both
+    void OnDisconnectedFromServer(NetworkDisconnection zInfo)
+    {
+        if (Network.isServer)
+        {
+            Debug.Log("Local server disconnection");
+        }
+        else
+        {
+            if (zInfo == NetworkDisconnection.LostConnection)
+                Debug.Log("Lost connection to server");
+            else
+                Debug.Log ("Successfully disconnected from server");
+        }
+        FrontEnd.Instance.SetState(FrontEnd.eFrontEndState.title);
+    }
 }
