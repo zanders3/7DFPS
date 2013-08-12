@@ -13,6 +13,7 @@ public class PlayerCamera : MonoBehaviour
 	public Transform Head;
 
 	private PlayerState state = PlayerState.InAir;
+	private float jumpTimer = 0.0f;
 
 	private enum PlayerState
 	{
@@ -33,7 +34,7 @@ public class PlayerCamera : MonoBehaviour
 		Head.rotation = Quaternion.AngleAxis(rotateAngle, Vector3.up) * Quaternion.AngleAxis(upAngle, Vector3.right);
 
 		RaycastHit hitInfo;
-		bool isTouchingGround = Physics.Raycast (new Ray (transform.position, Vector3.down), out hitInfo, 1.8f);
+		bool isTouchingGround = Physics.Raycast (new Ray (transform.position, Vector3.down), out hitInfo, 2.0f);
 
 		//Player jumping logic
 		switch (state)
@@ -51,14 +52,17 @@ public class PlayerCamera : MonoBehaviour
 			{
 				state = PlayerState.InAir;
 			}
-			else if (Input.GetButtonDown("Jump"))
+			else if (Input.GetButtonDown("Jump") && jumpTimer <= 0.0f)
 			{
 				Debug.Log("Jump");
-				rigidbody.AddForce(hitInfo.normal * 5.0f, ForceMode.Impulse);
+				rigidbody.AddForce(Vector3.up * 5.0f, ForceMode.Impulse);
 				state = PlayerState.InAir;
+				jumpTimer = 1.0f;
 			}
 			break;
 		}
+
+		jumpTimer -= Time.deltaTime;
 
 		//Player movement logic
 		switch (state)
@@ -68,7 +72,7 @@ public class PlayerCamera : MonoBehaviour
 			Vector2 move = Vector2.ClampMagnitude(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), 1.0f);
 			
 			Vector3 desiredVelocity = (move.x * Head.right + move.y * Head.forward) * MaxSpeed - rigidbody.velocity;
-			Vector3 velocityRelativeToFloor = Vector3.up * Vector3.Dot(desiredVelocity, hitInfo.normal);
+			Vector3 velocityRelativeToFloor = Vector3.up * Vector3.Dot(desiredVelocity, Vector3.up);
 			
 			rigidbody.AddForce(Vector3.ClampMagnitude((desiredVelocity - velocityRelativeToFloor) * MaxForce, MaxForce));
 			break;
