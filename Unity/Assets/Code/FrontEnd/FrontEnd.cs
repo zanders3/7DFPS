@@ -33,6 +33,7 @@ public class FrontEnd : MonoBehaviour {
 		mRect = new Rect(0,0,mBlockWidth, mBlockHeight);
 		mPlayerName = "Player";
 		mGameName = "7DFPSAwesomeness";
+		MasterServer.RequestHostList("7DFPSAwesomeness");
 	}
 	
 	// Update is called once per frame
@@ -78,7 +79,6 @@ public class FrontEnd : MonoBehaviour {
 		mRect.y += mRect.height;
 		if (GUI.Button(mRect, "Join"))
 		{
-			MasterServer.RequestHostList("7DFPSAwesomeness");
 			mHostList = MasterServer.PollHostList();
 			SetState(eFrontEndState.join);
 		}
@@ -112,13 +112,16 @@ public class FrontEnd : MonoBehaviour {
 				MasterServer.PollHostList();
 			}
 		}
-		foreach (HostData lGame in mHostList)
+		else
 		{
-			GUI.Label(mRect,lGame.gameName);
-			mRect.x += mRect.width;
-			if (GUI.Button(mRect, "Join"))
+			foreach (HostData lGame in mHostList)
 			{
-				Network.Connect(lGame);
+				GUI.Label(mRect,lGame.gameName);
+				mRect.x += mRect.width;
+				if (GUI.Button(mRect, "Join"))
+				{
+					Network.Connect(lGame);
+				}
 			}
 		}
 	}
