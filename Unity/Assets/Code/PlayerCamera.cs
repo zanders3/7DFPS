@@ -2,11 +2,24 @@
 using System.Collections;
 
 /// <summary>
-/// Implements the first person player camera
+/// Implements the first person player camera and player movement.
 /// </summary>
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerCamera : MonoBehaviour 
 {
 	private float upAngle, rotateAngle;
+
+	public float MaxSpeed = 6.0f, MaxForce = 100.0f, JumpVel = 1.0f;
+	public Transform Head;
+
+	private PlayerState state = PlayerState.InAir;
+
+	private enum PlayerState
+	{
+		TouchingGround,
+		Jumping,
+		InAir
+	};
 
 	void Start()
 	{
@@ -15,9 +28,50 @@ public class PlayerCamera : MonoBehaviour
 
 	void Update()
 	{
-		upAngle = Mathf.Clamp(upAngle + Input.GetAxis("Vertical"), 0.1f, Mathf.PI - 0.1f);
-		rotateAngle = Mathf.DeltaAngle(rotateAngle, Input.GetAxis("Horizontal"));
+		upAngle = Mathf.Clamp(upAngle - Input.GetAxis("Mouse Y"), -90.0f, 90.0f);
+		rotateAngle += Input.GetAxis("Mouse X");
+		Head.rotation = Quaternion.AngleAxis(rotateAngle, Vector3.up) * Quaternion.AngleAxis(upAngle, Vector3.right);
 
-		transform.rotation = Quaternion.AngleAxis(upAngle, Vector3.right) * Quaternion.AngleAxis(rotateAngle, Vector3.up);
+		RaycastHit hitInfo;
+		bool isTouchingGround = Physics.Raycast (new Ray (transform.position, Vector3.down), out hitInfo, 1.8f);
+
+		//Player jumping logic
+		switch (state)
+		{
+		case PlayerState.InAir:
+			if (isTouchingGround && !Input.GetButtonDown("Jump"))
+			{
+				Debug.Log("TouchingGround");
+				state = PlayerState.TouchingGround;
+			}
+			break;
+
+		case PlayerState.TouchingGround:
+			if (!isTouchingGround)
+			{
+				state = PlayerState.InAir;
+			}
+			else if (Input.GetButtonDown("Jump"))
+			{
+				Debug.Log("Jump");
+				rigidbody.AddForce(hitInfo.normal * 5.0f, ForceMode.Impulse);
+				state = PlayerState.InAir;
+			}
+			break;
+		}
+
+		//Player movement logic
+		switch (state)
+		{
+		case PlayerState.Jumping:
+		case PlayerState.TouchingGround:
+			Vector2 move = Vector2.ClampMagnitude(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), 1.0f);
+			
+			Vector3 desiredVelocity = (move.x * Head.right + move.y * Head.forward) * MaxSpeed - rigidbody.velocity;
+			Vector3 velocityRelativeToFloor = Vector3.up * Vector3.Dot(desiredVelocity, hitInfo.normal);
+			
+			rigidbody.AddForce(Vector3.ClampMagnitude((desiredVelocity - velocityRelativeToFloor) * MaxForce, MaxForce));
+			break;
+		}
 	}
 }
