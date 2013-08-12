@@ -67,7 +67,6 @@ public class PlayerCamera : MonoBehaviour
 		//Player movement logic
 		switch (state)
 		{
-		case PlayerState.Jumping:
 		case PlayerState.TouchingGround:
 			Vector2 move = Vector2.ClampMagnitude(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), 1.0f);
 			
