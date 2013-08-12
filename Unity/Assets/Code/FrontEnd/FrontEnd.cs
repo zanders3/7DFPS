@@ -105,6 +105,13 @@ public class FrontEnd : MonoBehaviour {
 	void DrawJoin()
 	{
 		mRect.Set(mBlockWidth, mBlockHeight, mBlockWidth * 4, mBlockHeight);
+		if (mHostList.Length == 0)
+		{
+			if (GUI.Button(mRect, "Refresh"))
+			{
+				MasterServer.PollHostList();
+			}
+		}
 		foreach (HostData lGame in mHostList)
 		{
 			GUI.Label(mRect,lGame.gameName);
