@@ -11,8 +11,6 @@ public enum MessageTypes
 
     //Server -> Client
     SetPlayerTransform,
-    KillPlayer,
-
     SendPlayerList
 }
 
@@ -35,7 +33,7 @@ public class Client : ServerBase
         {
             case MessageTypes.SendPlayerList:
                 for (int i = 0; i<playerList.Count; i++)
-                    playerList[i].Kill();
+                    playerList[i].Remove();
                 playerList.Clear();
 
                 int count = msg.ReadByte();
@@ -71,11 +69,13 @@ public class Client : ServerBase
 
         if (me != null)
         {
-            Vector3 movement = Vector3.zero;
-            me.SendMovement(ref movement);
+            Vector2 movement = Vector2.zero;
+            bool doJump = false;
+            me.SendMovement(ref movement, ref doJump);
 
             var msg = CreateMessage(MessageTypes.SendPlayerInput);
-            msg.Write(movement.x); msg.Write(movement.y); msg.Write(movement.z);
+            msg.Write(movement.x); msg.Write(movement.y);
+            msg.Write(doJump);
             SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
         }
     }
@@ -91,13 +91,10 @@ public class Client : ServerBase
 
     protected override void OnDisconnected(long playerID)
     {
-        if (playerID == this.PlayerID)
-        {
-            for (int i = 0; i<playerList.Count; i++)
-                playerList[i].Kill();
-            playerList.Clear();
+        foreach (var player in playerList)
+            player.Remove();
+        playerList.Clear();
 
-            LevelManager.ClearLevel();
-        }
+        Frontend.SetState(FrontendState.Title);
     }
 }

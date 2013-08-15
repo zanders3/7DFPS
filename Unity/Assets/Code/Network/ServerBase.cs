@@ -69,8 +69,14 @@ public abstract class ServerBase
     
     public void Close()
     {
-        DebugConsole.Log("Net: Closing");
-        server.Shutdown("Bye");
+        if (server != null)
+        {
+            DebugConsole.Log("Net: Closing");
+            OnDisconnected(PlayerID);
+
+            server.Shutdown("Bye");
+            server = null;
+        }
     }
     
     public virtual void Poll()
@@ -142,7 +148,9 @@ public abstract class ServerBase
                     DebugConsole.LogError("Net unhandled type: " + msg.MessageType);
                     break;
             }
-            server.Recycle(msg);
+
+            if (server != null)
+                server.Recycle(msg);
         }
     }
 

@@ -33,18 +33,22 @@ public class Frontend : MonoBehaviour
         "Coral"
     };
 
+    private static Frontend instance = null;
+
     string playerName, gameName;
     FrontendState state = FrontendState.Title;
     ServerBase networkManager = null;
 
     void Start()
     {
+        instance = this;
+
         playerName = playerNames[Random.Range(0, playerNames.Length)];
         gameName = playerName + "'s Game";
         System.Threading.Monitor.Enter(new object());
     }
 
-    void OnDisable()
+    void ResetNetwork()
     {
         if (networkManager != null)
         {
@@ -53,9 +57,23 @@ public class Frontend : MonoBehaviour
         }
     }
 
-    void SetState(FrontendState state)
+    void OnDisable()
     {
-        this.state = state;
+        ResetNetwork();
+    }
+
+    public static void SetState(FrontendState state)
+    {
+        if (instance.state == state)
+            return;
+
+        instance.state = state;
+
+        if (state == FrontendState.Title)
+        {
+            instance.ResetNetwork();
+            LevelManager.ClearLevel();
+        }
     }
 
     void Update()
@@ -75,6 +93,13 @@ public class Frontend : MonoBehaviour
                 GUILayout.BeginVertical();
                 {
                     GUILayout.Label("7DFPS");
+
+                    GUILayout.BeginHorizontal();
+                    {
+                        GUILayout.Label("Player Name");
+                        playerName = GUILayout.TextField(playerName);
+                    }
+                    GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
                     {
@@ -132,11 +157,8 @@ public class Frontend : MonoBehaviour
 
             case FrontendState.InGame:
                 GUILayout.BeginVertical();
-                {
-                    //foreach (string player in PlayerClient.PlayerNames)
-                    //    GUILayout.Label(player);
-                }
-                GUILayout.EndVertical();
+                if (GUILayout.Button("Quit"))
+                    SetState(FrontendState.Title);
                 break;
         }
     }

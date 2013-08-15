@@ -22,9 +22,11 @@ public class Server : ServerBase
     {
         base.Poll();
 
-        Vector3 pos = Vector3.zero;
-        me.SendMovement(ref pos);
+        Vector2 move = Vector2.zero;
+        bool doJump = false;
+        me.SendMovement(ref move, ref doJump);
 
+        Vector3 pos = Vector3.zero;
         for (int i = 0; i<playerList.Count; i++)
         {
             playerList[i].SendTransform(ref pos);
@@ -74,11 +76,12 @@ public class Server : ServerBase
                 break;
 
             case MessageTypes.SendPlayerInput:
-                Vector3 move = new Vector3(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
+                Vector3 move = new Vector2(msg.ReadFloat(), msg.ReadFloat());
+                bool doJump = msg.ReadBoolean();
                 for (int i = 0; i<playerList.Count; i++)
                     if (playerList[i].ID == msg.SenderConnection.RemoteUniqueIdentifier)
                     {
-                        playerList[i].SetMovement(move);
+                        playerList[i].SetMovement(move, doJump);
                         break;
                     }
                 break;
@@ -91,16 +94,27 @@ public class Server : ServerBase
     
     protected override void OnDisconnected(long playerID)
     {
-        foreach (var player in playerList)
+        if (playerID == this.PlayerID)
         {
-            if (player.ID == playerID)
-            {
-                playerList.Remove(player);
-                player.Kill();
+            foreach (var player in playerList)
+                player.Remove();
+            playerList.Clear();
 
-                UpdatePlayerList();
+            Frontend.SetState(FrontendState.Title);
+        } 
+        else
+        {
+            foreach (var player in playerList)
+            {
+                if (player.ID == playerID)
+                {
+                    playerList.Remove(player);
+                    player.Remove();
+
+                    UpdatePlayerList();
                 
-                return;
+                    return;
+                }
             }
         }
     }

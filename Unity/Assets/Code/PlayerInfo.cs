@@ -3,14 +3,30 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float MaxSpeed = 6.0f, MaxForce = 100.0f;
+    public float MaxSpeed = 6.0f, MaxForce = 1.0f;
 
-    public void SetInput(Vector3 move)
+    private Vector2 move;
+    private bool doJump;
+
+    public void SetInput(Vector2 move, bool doJump)
     {
-        Vector3 desiredVelocity = move * MaxSpeed - rigidbody.velocity;
-        Vector3 velocityRelativeToFloor = Vector3.up * Vector3.Dot(desiredVelocity, Vector3.up);
-        
-        rigidbody.AddForce(Vector3.ClampMagnitude((desiredVelocity - velocityRelativeToFloor) * MaxForce, MaxForce));
+        this.move = move;
+        this.doJump = doJump;
+
+        Vector3 desiredVelocity = new Vector3(move.x, 0.0f, move.y) * MaxSpeed - rigidbody.velocity;
+        desiredVelocity.y = 0.0f;
+
+        if (Physics.Raycast(new Ray(transform.position, -transform.up), 1.5f))
+            rigidbody.AddForce(Vector3.ClampMagnitude(desiredVelocity * MaxForce, MaxForce), ForceMode.VelocityChange);
+
+        //Jumping logic
+        if (doJump && Physics.Raycast(new Ray(transform.position, -transform.up), 2.0f))
+            rigidbody.AddForce(0.0f, 5.0f - rigidbody.velocity.y, 0.0f, ForceMode.VelocityChange);
+    }
+
+    void OnGUI()
+    {
+        GUI.Label(new Rect(0.0f, 0.0f, 300.0f, 60.0f), move.x + ", " + move.y + " " + doJump);
     }
 }
 
@@ -58,19 +74,22 @@ public class PlayerInfo
         playerObject.transform.position = position;
     }
 
-    public void SendMovement(ref Vector3 movement)
+    public void SendMovement(ref Vector2 movement, ref bool doJump)
     {
-        Vector2 move = Vector2.ClampMagnitude(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), 1.0f);
-        movement = (move.x * head.right + move.y * head.forward);
-        playerMovement.SetInput(movement);
+        movement = Vector2.ClampMagnitude(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), 1.0f);
+        Vector3 move = (movement.x * head.right + movement.y * head.forward).normalized;
+        movement = new Vector2(move.x, move.z);
+        doJump = Input.GetButtonDown("Jump");
+
+        playerMovement.SetInput(movement, doJump);
     }
 
-    public void SetMovement(Vector3 movement)
+    public void SetMovement(Vector2 movement, bool doJump)
     {
-        playerMovement.SetInput(movement);
+        playerMovement.SetInput(movement, doJump);
     }
 
-    public void Kill()
+    public void Remove()
     {
         if (playerObject == null)
             return;
