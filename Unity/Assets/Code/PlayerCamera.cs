@@ -2,8 +2,7 @@
 using System.Collections;
 
 /// <summary>
-/// Implements the first person player camera and player movement.
-/// Sends position to the server.
+/// Implements the first person player camera movement.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerCamera : MonoBehaviour 
@@ -13,9 +12,8 @@ public class PlayerCamera : MonoBehaviour
 
 	void Start()
 	{
-        gameObject.AddComponent<Camera>();
-
         Head = transform.FindChild("Head");
+        Head.camera.enabled = true;
 		Screen.lockCursor = true;
 	}
 
