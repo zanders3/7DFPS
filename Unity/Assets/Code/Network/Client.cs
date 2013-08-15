@@ -34,7 +34,10 @@ public class Client : ServerBase
         switch (type)
         {
             case MessageTypes.SendPlayerList:
+                for (int i = 0; i<playerList.Count; i++)
+                    playerList[i].Kill();
                 playerList.Clear();
+
                 int count = msg.ReadByte();
                 for (int i = 0; i<count; i++)
                 {
@@ -88,6 +91,13 @@ public class Client : ServerBase
 
     protected override void OnDisconnected(long playerID)
     {
-        LevelManager.ClearLevel();
+        if (playerID == this.PlayerID)
+        {
+            for (int i = 0; i<playerList.Count; i++)
+                playerList[i].Kill();
+            playerList.Clear();
+
+            LevelManager.ClearLevel();
+        }
     }
 }

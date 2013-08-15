@@ -21,6 +21,23 @@ public class PlayerInfo
         this.ID = ID;
         this.Name = name;
         this.IsMe = ID == myID;
+
+        DebugConsole.Log("Create Player: " + ID + ", " + Name + " " + (IsMe ? "IsMe" : ""));
+
+        playerObject = (GameObject)GameObject.Instantiate(Resources.Load("Player"), Vector3.zero, Quaternion.identity);
+        
+        //The player camera allows the player to look around, but not move directly.
+        if (IsMe)
+        {
+            playerObject.AddComponent<PlayerCamera>();
+            head = playerObject.transform.FindChild("Head");
+        }
+        else
+        {
+            GameObject.Destroy(playerObject.transform.FindChild("Head").gameObject);
+        }
+        
+        playerMovement = playerObject.AddComponent<PlayerMovement>();
     }
 
     public long ID { get; private set; }
@@ -31,47 +48,18 @@ public class PlayerInfo
     private PlayerMovement playerMovement;
     private Transform head;
 
-    void SpawnPlayerObject()
+    public void SendTransform(ref Vector3 pos)
     {
-        if (playerObject == null)
-        {
-            playerObject = (GameObject)GameObject.Instantiate(Resources.Load("Player"), Vector3.zero, Quaternion.identity);
-
-            //The player camera allows the player to look around, but not move directly.
-            if (IsMe)
-            {
-                playerObject.AddComponent<PlayerCamera>();
-                head = playerObject.transform.FindChild("Head");
-            }
-
-            playerMovement = playerObject.AddComponent<PlayerMovement>();
-        }
-    }
-
-    private Vector3 lastPos = Vector3.zero;
-
-    public bool SendTransform(ref Vector3 pos)
-    {
-        SpawnPlayerObject();
-        if ((lastPos - pos).sqrMagnitude > 0.2f)
-        {
-            pos = playerObject.transform.position;
-            lastPos = pos;
-            return true;
-        }
-        else return false;
+        pos = playerObject.transform.position;
     }
 
     public void SetTransform(Vector3 position)
     {
-        SpawnPlayerObject();
         playerObject.transform.position = position;
     }
 
     public void SendMovement(ref Vector3 movement)
     {
-        SpawnPlayerObject();
-
         Vector2 move = Vector2.ClampMagnitude(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), 1.0f);
         movement = (move.x * head.right + move.y * head.forward);
         playerMovement.SetInput(movement);
@@ -79,7 +67,6 @@ public class PlayerInfo
 
     public void SetMovement(Vector3 movement)
     {
-        SpawnPlayerObject();
         playerMovement.SetInput(movement);
     }
 
@@ -87,6 +74,8 @@ public class PlayerInfo
     {
         if (playerObject == null)
             return;
+
+        DebugConsole.Log("Remove Player: " + ID + ", " + Name + " " + (IsMe ? "IsMe" : ""));
 
         GameObject.Destroy(playerObject);
         playerObject = null;

@@ -27,7 +27,7 @@ public class Server : ServerBase
 
         for (int i = 0; i<playerList.Count; i++)
         {
-            if (playerList[i].SendTransform(ref pos))
+            playerList[i].SendTransform(ref pos);
             {
                 var msg = CreateMessage(MessageTypes.SetPlayerTransform);
                 msg.Write(playerList[i].ID);
@@ -56,17 +56,21 @@ public class Server : ServerBase
             case MessageTypes.SetPlayerInfo:
                 string playerName = msg.ReadString();
                 long playerID = msg.SenderConnection.RemoteUniqueIdentifier;
-                
-                foreach (PlayerInfo info in playerList)
-                    if (info.ID == playerID)
+
+                DebugConsole.Log("SetPlayerInfo: " + playerName + " " + playerID);
+
+                bool alreadyExists = playerList.Find(p => p.ID == playerID) != null;
+
+                if (alreadyExists)
                 {
-                    info.Name = playerName;
-                    return;
+                    DebugConsole.Log("Player already exists!");
                 }
-                
-                playerList.Add(new PlayerInfo(playerID, this.PlayerID, playerName));
-                
-                UpdatePlayerList();
+                else
+                {
+                    playerList.Add(new PlayerInfo(playerID, this.PlayerID, playerName));
+                    
+                    UpdatePlayerList();
+                }
                 break;
 
             case MessageTypes.SendPlayerInput:
@@ -92,6 +96,8 @@ public class Server : ServerBase
             if (player.ID == playerID)
             {
                 playerList.Remove(player);
+                player.Kill();
+
                 UpdatePlayerList();
                 
                 return;

@@ -1,14 +1,8 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Code/Network/Client.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Code/PlayerCamera.cs">
     <Files>
-      <File FileName="Assets/Code/Network/Server.cs" Line="7" Column="1" />
-      <File FileName="Assets/Code/Network/Client.cs" Line="15" Column="16" />
-      <File FileName="Assets/Code/Network/ServerBase.cs" Line="21" Column="6" />
-      <File FileName="Assets/Code/Frontend.cs" Line="109" Column="18" />
-      <File FileName="Assets/Code/PlayerCamera.cs" Line="14" Column="19" />
-      <File FileName="Assets/Code/LevelLoader.cs" Line="4" Column="2" />
-      <File FileName="Assets/Code/Lidgren.Network/NetConnectionStatus.cs" Line="26" Column="2" />
+      <File FileName="Assets/Code/PlayerCamera.cs" Line="25" Column="18" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -16,10 +10,8 @@
           <Node name="Assembly-CSharp" expanded="True">
             <Node name="Assets" expanded="True">
               <Node name="Code" expanded="True">
-                <Node name="Lidgren.Network" expanded="True" />
-                <Node name="Network" expanded="True">
-                  <Node name="Client.cs" selected="True" />
-                </Node>
+                <Node name="FrontEnd" expanded="True" />
+                <Node name="NetworkManager.cs" selected="True" />
               </Node>
             </Node>
           </Node>

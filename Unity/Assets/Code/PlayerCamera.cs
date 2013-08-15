@@ -13,7 +13,6 @@ public class PlayerCamera : MonoBehaviour
 	void Start()
 	{
         Head = transform.FindChild("Head");
-        Head.camera.enabled = true;
 		Screen.lockCursor = true;
 	}
 
