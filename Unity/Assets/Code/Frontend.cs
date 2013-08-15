@@ -44,6 +44,15 @@ public class Frontend : MonoBehaviour
         System.Threading.Monitor.Enter(new object());
     }
 
+    void OnDisable()
+    {
+        if (networkManager != null)
+        {
+            networkManager.Close();
+            networkManager = null;
+        }
+    }
+
     void SetState(FrontendState state)
     {
         this.state = state;
@@ -79,7 +88,7 @@ public class Frontend : MonoBehaviour
                         if (networkManager != null)
                             networkManager.Close();
 
-                        networkManager = new Server(gameName);
+                        networkManager = new Server(playerName, gameName);
                         SetState(FrontendState.InGame);
                     }
 
@@ -88,7 +97,7 @@ public class Frontend : MonoBehaviour
                         if (networkManager != null)
                             networkManager.Close();
 
-                        networkManager = new Client();
+                        networkManager = new Client(playerName);
                         SetState(FrontendState.Lobby);
                     }
                 }
@@ -98,16 +107,14 @@ public class Frontend : MonoBehaviour
             case FrontendState.Lobby:
                 GUILayout.BeginVertical();
                 {
-                    bool wantsRefresh = GUILayout.Button("Refresh");
-
-                    foreach (GameServer host in ((Client)networkManager).DiscoverClients(wantsRefresh))
+                    foreach (GameServer host in ((Client)networkManager).DiscoverClients())
                     {
                         GUILayout.BeginHorizontal();
                         {
                             GUILayout.Label(host.GameName);
                             if (GUILayout.Button("Join"))
                             {
-                                ((Client)networkManager).Join(host, playerName);
+                                ((Client)networkManager).Join(host);
                                 SetState(FrontendState.InGame);
                                 break;
                             }

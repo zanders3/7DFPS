@@ -315,7 +315,7 @@ namespace Lidgren.Network
 		/// random number generator algorithm generates 32 random bits that can be cast directly to 
 		/// a uint.
 		/// </summary>
-		[CLSCompliant(false)]
+		
 		public uint NextUInt()
 		{
 			uint t = (x ^ (x << 11));

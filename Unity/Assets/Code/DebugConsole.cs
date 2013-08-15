@@ -635,6 +635,7 @@ public class DebugConsole : MonoBehaviour {
     
     void OnDestroy() {
         StopAllCoroutines();
+        _instance = null;
     }
     #region StaticAccessors
     
