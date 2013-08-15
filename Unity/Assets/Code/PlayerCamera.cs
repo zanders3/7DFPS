@@ -52,7 +52,7 @@ public class PlayerCamera : MonoBehaviour
 		case PlayerState.InAir:
 			if (isTouchingGround && !Input.GetButtonDown("Jump"))
 			{
-				Debug.Log("TouchingGround");
+				DebugConsole.Log("TouchingGround");
 				state = PlayerState.TouchingGround;
 			}
 			break;
@@ -64,7 +64,7 @@ public class PlayerCamera : MonoBehaviour
 			}
 			else if (Input.GetButtonDown("Jump") && jumpTimer <= 0.0f)
 			{
-				Debug.Log("Jump");
+				DebugConsole.Log("Jump");
 				rigidbody.AddForce(Vector3.up * 5.0f, ForceMode.Impulse);
 				state = PlayerState.InAir;
 				jumpTimer = 1.0f;
