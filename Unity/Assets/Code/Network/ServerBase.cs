@@ -74,8 +74,11 @@ public abstract class ServerBase
             DebugConsole.Log("Net: Closing");
             OnDisconnected(PlayerID);
 
-            server.Shutdown("Bye");
-            server = null;
+            if (server != null)
+            {
+                server.Shutdown("Bye");
+                server = null;
+            }
         }
     }
     
