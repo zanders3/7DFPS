@@ -66,6 +66,7 @@ public class Server : ServerBase
             SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
 
             player.Remove();
+            pendingSpawnList.Add(new KeyValuePair<PlayerInfo, float>(player, 0.0f));
         }
     }
 
