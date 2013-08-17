@@ -7,6 +7,7 @@ public class Server : ServerBase
     public List<PlayerInfo> PlayerList { get { return PlayerList; } }
 
     private List<PlayerInfo> playerList = new List<PlayerInfo>();
+    private List<KeyValuePair<PlayerInfo, float>> pendingSpawnList = new List<KeyValuePair<PlayerInfo, float>>();
     private PlayerInfo me = null;
     
     public Server(string playerName, string gameName) : base(false, gameName)
@@ -15,9 +16,12 @@ public class Server : ServerBase
 
         me = new PlayerInfo(PlayerID, PlayerID, playerName);
         playerList.Add(me);
+        pendingSpawnList.Add(new KeyValuePair<PlayerInfo, float>(me, 0.0f));
         UpdatePlayerList();
     }
-    
+
+    const float SpawnTimeSeconds = 3.0f;
+
     public override void Poll()
     {
         base.Poll();
@@ -29,13 +33,39 @@ public class Server : ServerBase
         Vector3 pos = Vector3.zero;
         for (int i = 0; i<playerList.Count; i++)
         {
-            playerList[i].SendTransform(ref pos);
+            if (playerList[i].SendTransform(ref pos))
             {
                 var msg = CreateMessage(MessageTypes.SetPlayerTransform);
                 msg.Write(playerList[i].ID);
                 msg.Write(pos.x); msg.Write(pos.y); msg.Write(pos.z);
                 SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
             }
+        }
+
+        for (int i = 0; i<pendingSpawnList.Count; i++)
+        {
+            pendingSpawnList[i] = new KeyValuePair<PlayerInfo, float>(pendingSpawnList[i].Key, pendingSpawnList[i].Value + Time.deltaTime);
+            if (pendingSpawnList[i].Value > SpawnTimeSeconds)
+            {
+                DebugConsole.Log("Net.Server: Spawning player");
+                pendingSpawnList[i].Key.SpawnPlayer();
+                pendingSpawnList.RemoveAt(i);
+                i--;
+            }
+        }
+
+    }
+
+    public void KillPlayer(PlayerInfo player)
+    {
+        if (!player.IsRespawning)
+        {
+            DebugConsole.Log("Net.Server: Kill player " + player.Name);
+            var msg = CreateMessage(MessageTypes.KillPlayer);
+            msg.Write(player.ID);
+            SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
+
+            player.Remove();
         }
     }
 
@@ -70,7 +100,8 @@ public class Server : ServerBase
                 else
                 {
                     playerList.Add(new PlayerInfo(playerID, this.PlayerID, playerName));
-                    
+                    pendingSpawnList.Add(new KeyValuePair<PlayerInfo, float>(playerList[playerList.Count - 1], 0.0f));
+
                     UpdatePlayerList();
                 }
                 break;

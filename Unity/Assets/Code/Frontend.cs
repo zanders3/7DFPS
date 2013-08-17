@@ -76,6 +76,11 @@ public class Frontend : MonoBehaviour
         }
     }
 
+    public static Server GetServer()
+    {
+        return instance.networkManager as Server;
+    }
+
     void Update()
     {
         if (networkManager != null)

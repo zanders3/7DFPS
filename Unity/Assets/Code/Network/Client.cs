@@ -11,7 +11,8 @@ public enum MessageTypes
 
     //Server -> Client
     SetPlayerTransform,
-    SendPlayerList
+    SendPlayerList,
+    KillPlayer
 }
 
 public class Client : ServerBase
@@ -40,6 +41,7 @@ public class Client : ServerBase
                 for (int i = 0; i<count; i++)
                 {
                     PlayerInfo playerInfo = new PlayerInfo(msg.ReadInt64(), this.PlayerID, msg.ReadString());
+
                     if (playerInfo.IsMe)
                         me = playerInfo;
                     playerList.Add(playerInfo);
@@ -49,12 +51,28 @@ public class Client : ServerBase
                 break;
 
             case MessageTypes.SetPlayerTransform:
-                long playerID = msg.ReadInt64();
-                Vector3 pos = new Vector3(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
+                {
+                    long playerID = msg.ReadInt64();
+                    Vector3 pos = new Vector3(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
 
-                for (int i = 0; i<playerList.Count; i++)
-                    if (playerList[i].ID == playerID)
-                        playerList[i].SetTransform(pos);
+                    for (int i = 0; i<playerList.Count; i++)
+                        if (playerList[i].ID == playerID)
+                            playerList[i].SetTransform(pos);
+                }
+                break;
+
+            case MessageTypes.KillPlayer:
+                {
+                    long playerID = msg.ReadInt64();
+                    DebugConsole.Log("Net.Server: Spawn player " + playerID);
+
+                    for (int i = 0; i<playerList.Count; i++)
+                        if (playerList[i].ID == playerID)
+                        {
+                            playerList[i].Remove();
+                            break;
+                        }
+                }
                 break;
 
             default:
@@ -71,12 +89,13 @@ public class Client : ServerBase
         {
             Vector2 movement = Vector2.zero;
             bool doJump = false;
-            me.SendMovement(ref movement, ref doJump);
-
-            var msg = CreateMessage(MessageTypes.SendPlayerInput);
-            msg.Write(movement.x); msg.Write(movement.y);
-            msg.Write(doJump);
-            SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
+            if (me.SendMovement(ref movement, ref doJump))
+            {
+                var msg = CreateMessage(MessageTypes.SendPlayerInput);
+                msg.Write(movement.x); msg.Write(movement.y);
+                msg.Write(doJump);
+                SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
+            }
         }
     }
 
