@@ -1,26 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
-public class PlayerMovement : MonoBehaviour
-{
-    public PlayerInfo Info { get; set; }
-
-    public float MaxSpeed = 6.0f, MaxForce = 1.0f;
-
-    public void SetInput(Vector2 move, bool doJump)
-    {
-        Vector3 desiredVelocity = new Vector3(move.x, 0.0f, move.y) * MaxSpeed - rigidbody.velocity;
-        desiredVelocity.y = 0.0f;
-
-        if (Physics.Raycast(new Ray(transform.position, -transform.up), 1.5f))
-            rigidbody.AddForce(Vector3.ClampMagnitude(desiredVelocity * MaxForce, MaxForce), ForceMode.VelocityChange);
-
-        //Jumping logic
-        if (doJump && Physics.Raycast(new Ray(transform.position, -transform.up), 2.0f))
-            rigidbody.AddForce(0.0f, 5.0f - rigidbody.velocity.y, 0.0f, ForceMode.VelocityChange);
-    }
-}
-
 public class PlayerInfo
 {
     public PlayerInfo(long ID, long myID, string name)
@@ -40,6 +19,7 @@ public class PlayerInfo
     private GameObject playerObject;
     private PlayerMovement playerMovement;
     private Transform head;
+    private Weapon currentWeapon = null;
 
     public void SpawnPlayer()
     {
@@ -60,24 +40,26 @@ public class PlayerInfo
         playerMovement.Info = this;
     }
 
-    public bool SendTransform(ref Vector3 pos)
+    public bool SendTransform(ref Vector3 pos, ref Vector3 vel)
     {
         if (playerObject == null)
             return false;
 
         pos = playerObject.transform.position;
+        vel = playerObject.rigidbody.velocity;
         return true;
     }
 
-    public void SetTransform(Vector3 position)
+    public void SetTransform(Vector3 position, Vector3 velocity)
     {
         if (playerObject == null)
             SpawnPlayer();
 
-        playerObject.transform.position = position;
+        playerObject.transform.position = Vector3.Lerp(playerObject.transform.position, position, 0.5f);
+        playerObject.rigidbody.velocity = Vector3.Lerp(playerObject.rigidbody.velocity, velocity, 0.5f);
     }
 
-    public bool SendMovement(ref Vector2 movement, ref bool doJump)
+    public bool SendMovement(ref Vector2 movement, ref bool doJump, ref bool fireWeapon)
     {
         if (playerObject == null)
             return false;
@@ -86,9 +68,35 @@ public class PlayerInfo
         Vector3 move = (movement.x * head.right + movement.y * head.forward).normalized;
         movement = new Vector2(move.x, move.z);
         doJump = Input.GetButtonDown("Jump");
+        fireWeapon = currentWeapon != null && Input.GetButtonDown("Fire1");
 
         playerMovement.SetInput(movement, doJump);
+
         return true;
+    }
+
+    public void SetWeapon(WeaponType type)
+    {
+        if (currentWeapon == null || currentWeapon.Type != type)
+        {
+            if (currentWeapon != null)
+            {
+                GameObject.Destroy(currentWeapon);
+                currentWeapon = null;
+            }
+
+            currentWeapon = ((GameObject)GameObject.Instantiate(Resources.Load("Weapons/" + type), Vector3.zero, Quaternion.identity)).GetComponent<Weapon>();
+            currentWeapon.transform.parent = head.transform;
+            currentWeapon.transform.localPosition = Vector3.zero;
+            currentWeapon.transform.localRotation = Quaternion.identity;
+        }
+    }
+
+    public void FireWeapon()
+    {
+        DebugConsole.Log("FireWeapon");
+        if (currentWeapon != null)
+            currentWeapon.Fire(new Ray(head.position, head.forward));
     }
 
     public void SetMovement(Vector2 movement, bool doJump)

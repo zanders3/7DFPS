@@ -16,6 +16,12 @@ public class SpawnPoint : MonoBehaviour
             return Vector3.zero;
     }
 
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, 1.0f);
+    }
+
     void Start()
     {
         spawnPoints.Add(transform.position);

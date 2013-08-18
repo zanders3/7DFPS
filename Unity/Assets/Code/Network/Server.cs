@@ -12,8 +12,6 @@ public class Server : ServerBase
     
     public Server(string playerName, string gameName) : base(false, gameName)
     {
-        LevelManager.LoadLevel();
-
         me = new PlayerInfo(PlayerID, PlayerID, playerName);
         playerList.Add(me);
         pendingSpawnList.Add(new KeyValuePair<PlayerInfo, float>(me, 0.0f));
@@ -27,17 +25,21 @@ public class Server : ServerBase
         base.Poll();
 
         Vector2 move = Vector2.zero;
-        bool doJump = false;
-        me.SendMovement(ref move, ref doJump);
+        bool doJump = false, doFire = false;
+        me.SendMovement(ref move, ref doJump, ref doFire);
 
-        Vector3 pos = Vector3.zero;
+        if (doFire)
+            FireWeapon(me);
+
+        Vector3 pos = Vector3.zero, vel = Vector3.zero;
         for (int i = 0; i<playerList.Count; i++)
         {
-            if (playerList[i].SendTransform(ref pos))
+            if (playerList[i].SendTransform(ref pos, ref vel))
             {
                 var msg = CreateMessage(MessageTypes.SetPlayerTransform);
                 msg.Write(playerList[i].ID);
                 msg.Write(pos.x); msg.Write(pos.y); msg.Write(pos.z);
+                msg.Write(vel.x); msg.Write(vel.y); msg.Write(vel.z);
                 SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
             }
         }
@@ -54,6 +56,25 @@ public class Server : ServerBase
             }
         }
 
+    }
+
+    public void SetPlayerWeapon(PlayerInfo player, WeaponType type)
+    {
+        player.SetWeapon(type);
+
+        var msg = CreateMessage(MessageTypes.SetPlayerWeapon);
+        msg.Write(player.ID);
+        msg.Write((byte)type);
+        SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
+    }
+
+    public void FireWeapon(PlayerInfo player)
+    {
+        player.FireWeapon();
+
+        var msg = CreateMessage(MessageTypes.FireWeapon);
+        msg.Write(player.ID);
+        SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
     }
 
     public void KillPlayer(PlayerInfo player)
@@ -110,10 +131,14 @@ public class Server : ServerBase
             case MessageTypes.SendPlayerInput:
                 Vector3 move = new Vector2(msg.ReadFloat(), msg.ReadFloat());
                 bool doJump = msg.ReadBoolean();
+                bool doFire = msg.ReadBoolean();
                 for (int i = 0; i<playerList.Count; i++)
                     if (playerList[i].ID == msg.SenderConnection.RemoteUniqueIdentifier)
                     {
                         playerList[i].SetMovement(move, doJump);
+
+                        if (doFire)
+                            FireWeapon(playerList[i]);
                         break;
                     }
                 break;

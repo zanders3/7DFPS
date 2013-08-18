@@ -72,7 +72,6 @@ public class Frontend : MonoBehaviour
         if (state == FrontendState.Title)
         {
             instance.ResetNetwork();
-            LevelManager.ClearLevel();
         }
     }
 

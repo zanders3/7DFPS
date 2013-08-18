@@ -12,6 +12,14 @@ public class DeathZone : MonoBehaviour
         this.collider.isTrigger = true;
     }
 
+    void OnDrawGizmos()
+    {
+        Gizmos.color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
+        Gizmos.DrawCube(collider.bounds.center, collider.bounds.extents);
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(collider.bounds.center, collider.bounds.extents);
+    }
+
     void OnTriggerEnter(Collider other)
     {
         if (!ServerBase.IsClient && other.GetComponent<PlayerMovement>() != null)

@@ -12,7 +12,9 @@ public enum MessageTypes
     //Server -> Client
     SetPlayerTransform,
     SendPlayerList,
-    KillPlayer
+    KillPlayer,
+    SetPlayerWeapon,
+    FireWeapon
 }
 
 public class Client : ServerBase
@@ -54,10 +56,11 @@ public class Client : ServerBase
                 {
                     long playerID = msg.ReadInt64();
                     Vector3 pos = new Vector3(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
+                    Vector3 vel = new Vector3(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
 
                     for (int i = 0; i<playerList.Count; i++)
                         if (playerList[i].ID == playerID)
-                            playerList[i].SetTransform(pos);
+                            playerList[i].SetTransform(pos, vel);
                 }
                 break;
 
@@ -75,6 +78,33 @@ public class Client : ServerBase
                 }
                 break;
 
+            case MessageTypes.FireWeapon:
+                {
+                    long playerID = msg.ReadInt64();
+                    
+                    for (int i = 0; i<playerList.Count; i++)
+                        if (playerList[i].ID == playerID)
+                        {
+                            playerList[i].FireWeapon();
+                            break;
+                        }
+                }
+                break;
+
+            case MessageTypes.SetPlayerWeapon:
+                {
+                    long playerID = msg.ReadInt64();
+                    WeaponType weaponType = (WeaponType)msg.ReadByte();
+                    
+                    for (int i = 0; i<playerList.Count; i++)
+                        if (playerList[i].ID == playerID)
+                        {
+                            playerList[i].SetWeapon(weaponType);
+                            break;
+                        }
+                }
+                break;
+                
             default:
                 DebugConsole.LogError("Unknown client message type: " + type);
                 break;
@@ -88,12 +118,12 @@ public class Client : ServerBase
         if (me != null)
         {
             Vector2 movement = Vector2.zero;
-            bool doJump = false;
-            if (me.SendMovement(ref movement, ref doJump))
+            bool doJump = false, doFire = false;
+            if (me.SendMovement(ref movement, ref doJump, ref doFire))
             {
                 var msg = CreateMessage(MessageTypes.SendPlayerInput);
                 msg.Write(movement.x); msg.Write(movement.y);
-                msg.Write(doJump);
+                msg.Write(doJump); msg.Write(doFire);
                 SendMessage(msg, NetDeliveryMethod.ReliableSequenced);
             }
         }
@@ -101,8 +131,6 @@ public class Client : ServerBase
 
     protected override void OnConnected(long playerID)
     {
-        LevelManager.LoadLevel();
-
         var msg = CreateMessage(MessageTypes.SetPlayerInfo);
         msg.Write(playerName);
         SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
