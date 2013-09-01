@@ -465,12 +465,6 @@ public class DebugConsole : MonoBehaviour {
         _windowRect = new Rect(30.0f, 30.0f, 300.0f, 450.0f);
         #endif
         
-        LogMessage(Message.System(string.Format(" DebugConsole version {0}", VERSION)));
-        LogMessage(Message.System(" Copyright 2008-2010 Jeremy Hollingsworth "));
-        LogMessage(Message.System(" Ennanzus-Interactive.com "));
-        LogMessage(Message.System(" type '/?' for available commands."));
-        LogMessage(Message.Log(""));
-        
         this.RegisterCommandCallback("close", CMDClose);
         this.RegisterCommandCallback("clear", CMDClear);
         this.RegisterCommandCallback("sys", CMDSystemInfo);

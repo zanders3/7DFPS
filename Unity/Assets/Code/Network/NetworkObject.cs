@@ -18,17 +18,15 @@ public abstract class NetworkObject
     /// </summary>
     public bool IsMe { get; internal set; }
 
+    public long OwningID { get; internal set; }
+    public int ObjectIndex { get; internal set; }
+
+    internal byte[] ConstructionData { get; set; }
+
     /// <summary>
     /// Called when the object is initially created. Called on both client and server.
     /// </summary>
-    internal virtual void OnCreate()
-    {
-    }
-
-    /// <summary>
-    /// Called when the object is created and is owned by the current machine. Called on owning machine only after OnCreate().
-    /// </summary>
-    internal virtual void OnSetOwner()
+    internal virtual void OnCreate(NetIncomingMessage msg)
     {
     }
 
@@ -74,12 +72,12 @@ public abstract class NetworkObject
 
     protected void SendMessageToServer(byte messageType, Func<NetOutgoingMessage, NetOutgoingMessage> msgSender)
     {
-        //TODO TROLOLOL
+        throw new NotImplementedException();
     }
 
     protected void SendMessageToClient(byte messageType, Func<NetOutgoingMessage, NetOutgoingMessage> msgSender)
     {
-        //TODO TROLOLOL
+        throw new NotImplementedException();
     }
 
     internal virtual void HandleMessage(byte messageType, NetIncomingMessage msg)

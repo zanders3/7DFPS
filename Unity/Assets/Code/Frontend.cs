@@ -56,15 +56,6 @@ public class Frontend : MonoBehaviour
         ResetNetwork();
     }
 
-    void OnConnected(long playerID)
-    {
-    }
-
-    void OnDisconnected(long playerID)
-    {
-        //TODO: easy/simple player object destruction (SHOULD be automatic)
-    }
-
     public static void SetState(FrontendState state)
     {
         if (instance.state == state)
@@ -121,16 +112,12 @@ public class Frontend : MonoBehaviour
 
                     if (startNetwork)
                     {
-                        NetworkManager.Start(isServer, gameName, OnConnected, OnDisconnected);
+                        NetworkManager.Start(isServer, gameName);
                         SetState(isServer ? FrontendState.InGame : FrontendState.Lobby);
 
                         NetworkManager.Replicator.Register<Player>();
-                        NetworkManager.Replicator.Register<PlayerList>();
 
-                        PlayerList.SetPlayerName(playerName);
-
-                        if (isServer)
-                            NetworkManager.Replicator.Create<PlayerList>();
+                        Player.Create(playerName);
                     }
                 }
                 GUILayout.EndVertical();

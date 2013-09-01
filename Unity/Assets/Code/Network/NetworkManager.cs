@@ -32,14 +32,13 @@ public class NetworkManager : MonoBehaviour
     private static NetPeer server = null;
     private static NetworkManager instance = null;
     private static NetworkObjectReplicator replicator = null;
-    private static Action<long> onConnected, onDisconnected;
 
     private static string gameName;
     private static List<GameServer> discoveredClients = new List<GameServer>();
 
     private const int port = 14242;
 
-    public static void Start(bool isServer, string gameName, Action<long> onConnected, Action<long> onDisconnected)
+    public static void Start(bool isServer, string gameName)
     {
         if (instance == null)
         {
@@ -47,8 +46,6 @@ public class NetworkManager : MonoBehaviour
         }
 
         NetworkManager.gameName = gameName;
-        NetworkManager.onConnected = onConnected;
-        NetworkManager.onDisconnected = onDisconnected;
         IsServer = isServer;
 
         NetPeerConfiguration config = new NetPeerConfiguration("7DFPSFTW");
@@ -94,7 +91,7 @@ public class NetworkManager : MonoBehaviour
     {
         if (server != null)
         {
-            onDisconnected(MyID);
+            replicator.OnDisconnected(MyID);
 
             if (server != null)
             {
@@ -152,11 +149,11 @@ public class NetworkManager : MonoBehaviour
                     switch (status)
                     {
                         case NetConnectionStatus.Connected:
-                            onConnected(msg.SenderConnection.RemoteUniqueIdentifier);
+                            replicator.OnConnected(msg.SenderConnection.RemoteUniqueIdentifier);
                             break;
                             
                         case NetConnectionStatus.Disconnected:
-                            onDisconnected(msg.SenderConnection.RemoteUniqueIdentifier);
+                            replicator.OnDisconnected(msg.SenderConnection.RemoteUniqueIdentifier);
                             break;
                     }
                 }

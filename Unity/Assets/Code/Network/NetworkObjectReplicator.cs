@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Lidgren.Network;
 using System.Collections.Generic;
 
@@ -9,28 +10,19 @@ public class NetworkObjectReplicator
 {
     enum MessageType
     {
-        Create,
-        SetOwner,
         ReplicateState,
-        ReplicateControlData
+        ReplicateControlData,
+        Create
     }
     
     private NetPeer server;
     private bool isServer;
     private List<NetworkObject> networkObjects = new List<NetworkObject>();
     private List<NetworkObject> ownedObjects = new List<NetworkObject>();
-    
+
     private List<Type> typeIndex = new List<Type>();
 
-    void AddOwnedObject(NetworkObject obj)
-    {
-        if (ownedObjects.Contains(obj))
-            return;
-
-        obj.IsMe = true;
-        obj.OnSetOwner();
-        ownedObjects.Add(obj);
-    }
+    private List<NetOutgoingMessage> pendingClientCreateRequests = new List<NetOutgoingMessage>();
 
     internal NetworkObjectReplicator(NetPeer server, bool isServer)
     {
@@ -45,90 +37,150 @@ public class NetworkObjectReplicator
     {
         typeIndex.Add(typeof(T));
     }
-    
+
+    NetOutgoingMessage CreateMessage(int objectIndex, MessageType messageType)
+    {
+        NetOutgoingMessage msg = server.CreateMessage();
+        msg.Write((byte)objectIndex);
+        msg.Write((byte)messageType);
+        return msg;
+    }
+
+    void CreateObject(int objectIndex, MessageType messageType, NetIncomingMessage msg)
+    {
+        int objectType = (int)msg.ReadByte();
+        long owningID = msg.ReadInt64();
+
+        DebugConsole.Log("Construction: " + objectIndex + ", " + objectType + ", " + owningID);
+        DebugConsole.Log(string.Join(" ", msg.Data.Select(b => b.ToString()).ToArray()));
+
+        //The server allocates the object index only. An object index of 0 indicates that the object has not had an ID allocated.
+        if (isServer && objectIndex == 255)
+        {
+            objectIndex = networkObjects.Count + 1;
+        }
+
+        //Ignore if this object has already been created
+        if (networkObjects.Count > objectIndex && networkObjects[objectIndex] == null)
+            return;
+
+        //The object index is the first byte of the packet. This might have been changed by the object index allocation on the server above.
+        //This is a pretty dirty hack.. D:
+        byte[] constructionData = new byte[msg.Data.Length];
+        msg.Data.CopyTo(constructionData, 0);
+        constructionData[0] = (byte)objectIndex;
+
+        DebugConsole.Log(string.Join(" ", constructionData.Select(b => b.ToString()).ToArray()));
+
+        //Broadcast the create message to all clients if this is the server
+        if (isServer && server.Connections.Count > 0)
+        {
+            NetOutgoingMessage outMsg = server.CreateMessage();
+            outMsg.Write(constructionData);
+            server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
+        }
+
+        //Create the actual object
+        while (networkObjects.Count <= objectIndex)
+            networkObjects.Add(null);
+
+        NetworkObject obj = (NetworkObject)typeIndex[objectType].GetConstructors()[0].Invoke(new object[] {});
+        obj.IsMe = NetworkManager.MyID == owningID;
+        obj.OwningID = owningID;
+        obj.ObjectIndex = objectIndex;
+        obj.ConstructionData = constructionData;
+        obj.OnCreate(msg);
+
+        //Assign the objects to the replicator
+        DebugConsole.Log("Rep.Create: " + objectIndex + " " + typeIndex[objectType].Name + " " + owningID + " (" + obj.IsMe + ")");
+        if (obj.IsMe)
+            ownedObjects.Add(obj);
+
+        networkObjects[objectIndex] = obj;
+    }
+
+    public void OnConnected(long playerID)
+    {
+        if (isServer)
+        {
+            //Broadcast not yet created objects to the new client
+            NetConnection client = null;
+
+            for (int i = 0; i<server.Connections.Count; i++)
+                if (server.Connections[i].RemoteUniqueIdentifier == playerID)
+                {
+                    client = server.Connections[i];
+                    break;
+                }
+
+            for (int i = 0; i<networkObjects.Count; i++)
+            {
+                if (networkObjects[i] != null)
+                {
+                    NetOutgoingMessage msg = server.CreateMessage();
+                    msg.Write(networkObjects[i].ConstructionData);
+                    server.SendMessage(msg, client, NetDeliveryMethod.ReliableOrdered);
+                }
+            }
+        }
+    }
+
+    public void OnDisconnected(long playerID)
+    {
+        //TODO: handle disconnects by destroying owned objects
+    }
+
     /// <summary>
     /// Creates an instance of the network object on the client and the server. 
     /// Assigns the callee as the owner of the object.
     /// </summary>
     /// <typeparam name="T">The NetworkObject implementing type to instantiate.</typeparam>
-    public void Create<T>() where T : NetworkObject, new()
+    public void Create<T>(Func<NetOutgoingMessage, NetOutgoingMessage> createMessage) where T : NetworkObject, new()
     {
-        DebugConsole.Log("Rep.Create: " + typeof(T).Name + " " + isServer);
-
         int objectType = typeIndex.IndexOf(typeof(T));
+
+        NetOutgoingMessage msg = CreateMessage(255, MessageType.Create);
+        msg.Write((byte)objectType);
+        msg.Write(NetworkManager.MyID);
+        msg = createMessage(msg);
         
         if (isServer)
-            AddOwnedObject(GetOrCreateObject((byte)objectType, (byte)networkObjects.Count));
+        {
+            NetIncomingMessage incomingMsg = server.CreateIncomingMessage(NetIncomingMessageType.Data, msg.Data);
+            HandleMessage(incomingMsg);
+
+            server.Recycle(msg);
+        }
         else
         {
-            NetOutgoingMessage msg = CreateMessage(objectType, 0, MessageType.Create);
-            server.SendMessage(msg, server.Connections[0], NetDeliveryMethod.ReliableOrdered);
+            pendingClientCreateRequests.Add(msg);
         }
-    }
-    
-    NetworkObject GetOrCreateObject(int typeIndex, int objectIndex)
-    {
-        while (networkObjects.Count <= objectIndex)
-            networkObjects.Add(null);
-        
-        NetworkObject obj = networkObjects[objectIndex];
-        if (obj == null)
-        {
-            DebugConsole.Log("CreateObject: " + this.typeIndex[typeIndex].Name + " " + objectIndex);
-            obj = (NetworkObject)this.typeIndex[typeIndex].GetConstructors()[0].Invoke(new object[] {});
-            networkObjects[objectIndex] = obj;
-            obj.TypeIndex = typeIndex;
-
-            obj.OnCreate();
-        }
-        
-        return obj;
     }
     
     public void HandleMessage(NetIncomingMessage msg)
     {
-        int typeIndex, objectIndex;
-        MessageType messageType;
-        ReadMessage(msg, out typeIndex, out objectIndex, out messageType);
-        
+        int objectIndex = (int)msg.ReadByte();
+        MessageType messageType = (MessageType)msg.ReadByte();
+
+        //We cannot sync this object yet because we are waiting for the create message for it.
+        if (messageType != MessageType.Create && (objectIndex >= networkObjects.Count || networkObjects[objectIndex] == null))
+        {
+            DebugConsole.Log(messageType + " from null object " + objectIndex);
+            return;
+        }
+
         switch (messageType)
         {
             case MessageType.Create:
-                objectIndex = networkObjects.Count;
-                GetOrCreateObject(typeIndex, objectIndex);
-                
-                if (msg.SenderConnection.RemoteUniqueIdentifier != server.UniqueIdentifier)
-                {
-                    NetOutgoingMessage outMsg = CreateMessage(typeIndex, objectIndex, MessageType.SetOwner);
-                    server.SendMessage(outMsg, msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
-                }
-                break;
-            case MessageType.SetOwner:
-                AddOwnedObject(GetOrCreateObject(typeIndex, objectIndex));
+                CreateObject(objectIndex, messageType, msg);
                 break;
             case MessageType.ReplicateState:
-                GetOrCreateObject(typeIndex, objectIndex).DeserializeState(msg);
+                networkObjects[objectIndex].DeserializeState(msg);
                 break;
             case MessageType.ReplicateControlData:
-                GetOrCreateObject(typeIndex, objectIndex).DeserializeControlData(msg);
+                networkObjects[objectIndex].DeserializeControlData(msg);
                 break;
         }
-    }
-    
-    NetOutgoingMessage CreateMessage(int typeIndex, int objectIndex, MessageType messageType)
-    {
-        NetOutgoingMessage msg = server.CreateMessage();
-        msg.Write((byte)typeIndex);
-        msg.Write((byte)objectIndex);
-        msg.Write((byte)messageType);
-        return msg;
-    }
-    
-    void ReadMessage(NetIncomingMessage msg, out int typeIndex, out int objectIndex, out MessageType messageType)
-    {
-        typeIndex = (int)msg.ReadByte();
-        objectIndex = (int)msg.ReadByte();
-        messageType = (MessageType)msg.ReadByte();
     }
     
     public void SendMessages()
@@ -149,7 +201,6 @@ public class NetworkObjectReplicator
                     
                     NetIncomingMessage incomingMsg = server.CreateIncomingMessage(NetIncomingMessageType.Data, msg.Data);
                     ownedObjects[i].DeserializeControlData(incomingMsg);
-                    server.Recycle(incomingMsg);
                     
                     server.Recycle(msg);
                 }
@@ -160,9 +211,9 @@ public class NetworkObjectReplicator
             {
                 for (int i = 0; i<networkObjects.Count; i++)
                 {
-                    if (networkObjects[i].ShouldSerializeState())
+                    if (networkObjects[i] != null && networkObjects[i].ShouldSerializeState())
                     {
-                        NetOutgoingMessage msg = CreateMessage(networkObjects[i].TypeIndex, i, MessageType.ReplicateState);
+                        NetOutgoingMessage msg = CreateMessage(i, MessageType.ReplicateState);
                         
                         networkObjects[i].SerializeState(msg);
                         
@@ -171,14 +222,22 @@ public class NetworkObjectReplicator
                 }
             }
         }
-        else
+        else if (server.Connections.Count > 0)
         {
+            while (pendingClientCreateRequests.Count > 0)
+            {
+                NetOutgoingMessage msg = pendingClientCreateRequests[pendingClientCreateRequests.Count-1];
+
+                server.SendMessage(msg, server.Connections[0], NetDeliveryMethod.ReliableOrdered);
+                pendingClientCreateRequests.RemoveAt(pendingClientCreateRequests.Count - 1);
+            }
+
             //Send control data to server
             for (int i = 0; i<ownedObjects.Count; i++)
             {
                 if (ownedObjects[i].ShouldSerializeControlData())
                 {
-                    NetOutgoingMessage msg = CreateMessage(networkObjects[i].TypeIndex, i, MessageType.ReplicateControlData);
+                    NetOutgoingMessage msg = CreateMessage(ownedObjects[i].ObjectIndex, MessageType.ReplicateControlData);
                     
                     ownedObjects[i].SerializeControlData(msg);
                     
