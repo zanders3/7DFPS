@@ -9,6 +9,10 @@ public class Player : NetworkObject
     GameObject playerObject = null;
     Transform head = null;
     string playerName;
+    float spawnTimer = 3.0f;
+
+    public int SpawnTimer { get { return (int)spawnTimer; } }
+    public string Name { get { return playerName; } }
 
     public static void Create(string playerName)
     {
@@ -22,20 +26,6 @@ public class Player : NetworkObject
     internal override void OnCreate(NetIncomingMessage msg)
     {
         playerName = msg.ReadString();
-
-        if (playerObject == null)
-            playerObject = (GameObject)GameObject.Instantiate((GameObject)Resources.Load("Player"), SpawnPoint.GetSpawnPoint(), Quaternion.identity);
-
-        head = playerObject.transform.FindChild("Head");
-        head.camera.enabled = false;
-        head.GetComponent<AudioListener>().enabled = false;
-
-        if (IsMe)
-        {
-            playerObject.AddComponent<PlayerCamera>();
-            head.camera.enabled = true;
-            head.GetComponent<AudioListener>().enabled = true;
-        }
 
         DebugConsole.Log("CreatePlayer: " + playerName + "(" + IsMe + ")");
         Players.Add(this);
@@ -54,7 +44,7 @@ public class Player : NetworkObject
 
     internal override bool ShouldSerializeControlData()
     {
-        return true;
+        return playerObject != null;
     }
 
     internal override void SerializeControlData(NetOutgoingMessage msg)
@@ -100,20 +90,93 @@ public class Player : NetworkObject
 
     internal override void SerializeState(NetOutgoingMessage msg)
     {
-        Rigidbody rigidbody = playerObject.rigidbody;
-
-        msg.Write(rigidbody.position);
-        msg.Write(rigidbody.velocity);
-        msg.Write(head.rotation);
+        if (spawnTimer > 0.0f)
+        {
+            msg.Write(true);
+            msg.Write(spawnTimer);
+        }
+        else
+        {
+            Rigidbody rigidbody = playerObject.rigidbody;
+            msg.Write(false);
+            msg.Write(rigidbody.position);
+            msg.Write(rigidbody.velocity);
+            msg.Write(head.rotation);
+        }
     }
 
     internal override void DeserializeState(NetIncomingMessage msg)
     {
-        Rigidbody rigidbody = playerObject.rigidbody;
+        bool waitingForSpawn = msg.ReadBoolean();
+        if (waitingForSpawn)
+        {
+            KillPlayer();
 
-        rigidbody.position = msg.ReadVector3();
-        rigidbody.velocity = msg.ReadVector3();
-        if (!IsMe)
-            head.rotation = msg.ReadQuaternion();
+            this.spawnTimer = msg.ReadSingle();
+        }
+        else
+        {
+            CreatePlayer();
+
+            Rigidbody rigidbody = playerObject.rigidbody;
+
+            rigidbody.position = msg.ReadVector3();
+            rigidbody.velocity = msg.ReadVector3();
+            if (!IsMe)
+                head.rotation = msg.ReadQuaternion();
+        }
+    }
+
+    internal override void Update()
+    {
+        DebugConsole.Log("Player Update: " + spawnTimer);
+        if (NetworkManager.IsServer)
+        {
+            if (spawnTimer > 0.0f)
+                spawnTimer -= Time.deltaTime;
+
+            if (spawnTimer > 0.0f)
+                KillPlayer();
+            else
+                CreatePlayer();
+        }
+    }
+
+    void CreatePlayer()
+    {
+        if (playerObject != null)
+            return;
+
+        playerObject = (GameObject)GameObject.Instantiate((GameObject)Resources.Load("Player"), SpawnPoint.GetSpawnPoint(), Quaternion.identity);
+
+        playerObject.AddComponent<PlayerScript>().Player = this;
+
+        head = playerObject.transform.FindChild("Head");
+        head.camera.enabled = false;
+        head.GetComponent<AudioListener>().enabled = false;
+        
+        if (IsMe)
+        {
+            playerObject.AddComponent<PlayerCamera>();
+            head.camera.enabled = true;
+            head.GetComponent<AudioListener>().enabled = true;
+        }
+    }
+
+    void KillPlayer()
+    {
+        if (playerObject == null)
+            return;
+
+        GameObject.Destroy(playerObject);
+        playerObject = null;
+    }
+
+    public void Kill()
+    {
+        if (NetworkManager.IsServer)
+        {
+            spawnTimer = 3.0f;
+        }
     }
 }

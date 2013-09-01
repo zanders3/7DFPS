@@ -37,6 +37,13 @@ public abstract class NetworkObject
     {
     }
 
+    /// <summary>
+    /// Called every frame on both the client and the server before any serialization.
+    /// </summary>
+    internal virtual void Update()
+    {
+    }
+
     internal virtual bool ShouldSerializeState()
     {
         return false;

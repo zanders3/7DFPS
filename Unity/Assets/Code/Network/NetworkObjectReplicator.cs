@@ -207,6 +207,10 @@ public class NetworkObjectReplicator
     
     public void SendMessages()
     {
+        for (int i = 0; i<networkObjects.Count; i++)
+            if (networkObjects[i] != null)
+                networkObjects[i].Update();
+
         if (isServer)
         {
             //Additional bits eventually needed:
