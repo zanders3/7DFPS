@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.Net;
+using UnityEngine;
 
 namespace Lidgren.Network
 {
@@ -351,6 +352,21 @@ namespace Lidgren.Network
 			byte[] bytes = ReadBytes(4);
 			return BitConverter.ToSingle(bytes, 0);
 		}
+
+        public Vector3 ReadVector3()
+        {
+            return new Vector3(ReadSingle(), ReadSingle(), ReadSingle());
+        }
+
+        public Vector2 ReadVector2()
+        {
+            return new Vector2(ReadSingle(), ReadSingle());
+        }
+
+        public Quaternion ReadQuaternion()
+        {
+            return new Quaternion(ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle());
+        }
 
 		/// <summary>
 		/// Reads a 32 bit floating point value written using Write(Single)

@@ -24,6 +24,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace Lidgren.Network
 {
@@ -90,6 +91,27 @@ namespace Lidgren.Network
 			NetBitWriter.WriteByte((value ? (byte)1 : (byte)0), 1, m_data, m_bitLength);
 			m_bitLength += 1;
 		}
+
+        public void Write(Vector3 value)
+        {
+            Write(value.x);
+            Write(value.y);
+            Write(value.z);
+        }
+
+        public void Write(Vector2 value)
+        {
+            Write(value.x);
+            Write(value.y);
+        }
+
+        public void Write(Quaternion value)
+        {
+            Write(value.x);
+            Write(value.y);
+            Write(value.z);
+            Write(value.w);
+        }
 
 		/// <summary>
 		/// Write a byte

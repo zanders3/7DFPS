@@ -11,8 +11,8 @@ public abstract class Weapon : MonoBehaviour
         
         animation.Play("BoxingGloveFire", PlayMode.StopAll);
 
-        if (!Server.IsClient)
-            DoFire(fireDirection);
+        //if (!Server.IsClient)
+        //    DoFire(fireDirection);
     }
 
     protected abstract void DoFire(Ray fireDirection);

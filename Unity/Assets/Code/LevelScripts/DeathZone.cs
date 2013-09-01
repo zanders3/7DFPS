@@ -22,9 +22,9 @@ public class DeathZone : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (!ServerBase.IsClient && other.GetComponent<PlayerMovement>() != null)
+        /*if (!ServerBase.IsClient && other.GetComponent<PlayerMovement>() != null)
         {
             Frontend.GetServer().KillPlayer(other.GetComponent<PlayerMovement>().Info);
-        }
+        }*/
     }
 }

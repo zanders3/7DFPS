@@ -37,7 +37,6 @@ public class Frontend : MonoBehaviour
 
     string playerName, gameName;
     FrontendState state = FrontendState.Title;
-    ServerBase networkManager = null;
 
     void Start()
     {
@@ -45,21 +44,25 @@ public class Frontend : MonoBehaviour
 
         playerName = playerNames[Random.Range(0, playerNames.Length)];
         gameName = playerName + "'s Game";
-        System.Threading.Monitor.Enter(new object());
     }
 
     void ResetNetwork()
     {
-        if (networkManager != null)
-        {
-            networkManager.Close();
-            networkManager = null;
-        }
+        NetworkManager.Stop();
     }
 
     void OnDisable()
     {
         ResetNetwork();
+    }
+
+    void OnConnected(long playerID)
+    {
+    }
+
+    void OnDisconnected(long playerID)
+    {
+        //TODO: easy/simple player object destruction (SHOULD be automatic)
     }
 
     public static void SetState(FrontendState state)
@@ -73,17 +76,6 @@ public class Frontend : MonoBehaviour
         {
             instance.ResetNetwork();
         }
-    }
-
-    public static Server GetServer()
-    {
-        return instance.networkManager as Server;
-    }
-
-    void Update()
-    {
-        if (networkManager != null)
-            networkManager.Poll();
     }
 
     void OnGUI()
@@ -112,22 +104,33 @@ public class Frontend : MonoBehaviour
                     }
                     GUILayout.EndHorizontal();
 
+                    bool startNetwork = false;
+                    bool isServer = false;
+
                     if (GUILayout.Button("Host"))
                     {
-                        if (networkManager != null)
-                            networkManager.Close();
-
-                        networkManager = new Server(playerName, gameName);
-                        SetState(FrontendState.InGame);
+                        startNetwork = true;
+                        isServer = true;
                     }
 
                     if (GUILayout.Button("Join"))
                     {
-                        if (networkManager != null)
-                            networkManager.Close();
+                        startNetwork = true;
+                        isServer = false;
+                    }
 
-                        networkManager = new Client(playerName);
-                        SetState(FrontendState.Lobby);
+                    if (startNetwork)
+                    {
+                        NetworkManager.Start(isServer, gameName, OnConnected, OnDisconnected);
+                        SetState(isServer ? FrontendState.InGame : FrontendState.Lobby);
+
+                        NetworkManager.Replicator.Register<Player>();
+                        NetworkManager.Replicator.Register<PlayerList>();
+
+                        PlayerList.SetPlayerName(playerName);
+
+                        if (isServer)
+                            NetworkManager.Replicator.Create<PlayerList>();
                     }
                 }
                 GUILayout.EndVertical();
@@ -136,14 +139,14 @@ public class Frontend : MonoBehaviour
             case FrontendState.Lobby:
                 GUILayout.BeginVertical();
                 {
-                    foreach (GameServer host in ((Client)networkManager).DiscoverClients())
+                    foreach (GameServer host in NetworkManager.DiscoverGames())
                     {
                         GUILayout.BeginHorizontal();
                         {
                             GUILayout.Label(host.GameName);
                             if (GUILayout.Button("Join"))
                             {
-                                ((Client)networkManager).Join(host);
+                                NetworkManager.Join(host);
                                 SetState(FrontendState.InGame);
                                 break;
                             }

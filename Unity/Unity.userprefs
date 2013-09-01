@@ -1,31 +1,15 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Code/LevelScripts/SpawnPoint.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Code/PlayerMovement.cs">
     <Files>
-      <File FileName="Assets/Code/PlayerCamera.cs" Line="15" Column="44" />
-      <File FileName="Assets/Code/Network/Client.cs" Line="15" Column="15" />
-      <File FileName="Assets/Code/Network/ServerBase.cs" Line="88" Column="17" />
-      <File FileName="Assets/Code/PlayerInfo.cs" Line="88" Column="6" />
-      <File FileName="Assets/Code/Network/Server.cs" Line="64" Column="15" />
-      <File FileName="Assets/Code/Lidgren.Network/NetPeer.Send.cs" Line="116" Column="40" />
-      <File FileName="Assets/Code/Frontend.cs" Line="98" Column="22" />
-      <File FileName="Assets/Code/LevelScripts/DeathZone.cs" Line="16" Column="13" />
-      <File FileName="Assets/Code/LevelScripts/SpawnPoint.cs" Line="26" Column="25" />
+      <File FileName="Assets/Code/Network/PlayerClient.cs" Line="65" Column="9" />
+      <File FileName="Assets/Code/PlayerMovement.cs" Line="57" Column="5" />
+      <File FileName="Assets/Code/PlayerInfo.cs" Line="76" Column="25" />
+      <File FileName="Assets/Code/Network/PlayerList.cs" Line="79" Column="31" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True">
-          <Node name="Assembly-CSharp" expanded="True">
-            <Node name="Assets" expanded="True">
-              <Node name="Code" expanded="True">
-                <Node name="LevelScripts" expanded="True">
-                  <Node name="SpawnPoint.cs" selected="True" />
-                </Node>
-                <Node name="Network" expanded="True" />
-              </Node>
-            </Node>
-          </Node>
-        </State>
+        <State expanded="True" selected="True" />
       </Pad>
       <Pad Id="ClassPad">
         <State expanded="True" selected="True" />

@@ -8,11 +8,11 @@ public class BoxingGloveWeapon : Weapon
     
     protected override void DoFire(Ray fireDirection)
     {
-        RaycastHit hitInfo;
+        /*RaycastHit hitInfo;
         if (Physics.Raycast(fireDirection, out hitInfo) && hitInfo.distance <= MaxDistance && hitInfo.collider.GetComponent<PlayerMovement>() != null)
         {
             hitInfo.rigidbody.AddForce(fireDirection.direction * HitForce);
-        }
+        }*/
     }
 }
 

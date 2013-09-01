@@ -2,6 +2,7 @@ using UnityEngine;
 
 public enum WeaponType
 {
+    None,
     BoxingGloveGun
 }
 
@@ -17,8 +18,7 @@ public class WeaponPickup : MonoBehaviour
 
     void SpawnWeapon()
     {
-        currentWeapon = ((GameObject)GameObject.Instantiate(Resources.Load("Weapons/" + WeaponType), transform.position, Quaternion.identity)).GetComponent<Weapon>();
-        currentWeapon.transform.parent = transform;
+
     }
 
     void OnDrawGizmos()
@@ -30,7 +30,11 @@ public class WeaponPickup : MonoBehaviour
     void Start()
     {
         collider.isTrigger = true;
-        SpawnWeapon();
+
+        /*currentWeapon = ((GameObject)GameObject.Instantiate(Resources.Load("Weapons/" + WeaponType), transform.position, Quaternion.identity)).GetComponent<Weapon>();
+        currentWeapon.transform.parent = transform;
+        foreach (var c in currentWeapon.GetComponentsInChildren<Collider>())
+            c.enabled = false;*/
     }
 
     void Update()
@@ -45,13 +49,9 @@ public class WeaponPickup : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (!ServerBase.IsClient && other.GetComponent<PlayerMovement>() != null)
+        /*if (!ServerBase.IsClient && other.GetComponent<PlayerMovement>() != null)
         {
             Frontend.GetServer().SetPlayerWeapon(other.GetComponent<PlayerMovement>().Info, WeaponType);
-
-            Destroy(currentWeapon);
-            currentWeapon = null;
-            weaponSpawnTimer = 0.0f;
-        }
+        }*/
     }
 }
