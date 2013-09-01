@@ -153,6 +153,19 @@ public class Frontend : MonoBehaviour
                 GUILayout.BeginVertical();
                 if (GUILayout.Button("Quit"))
                     SetState(FrontendState.Title);
+                GUILayout.EndVertical();
+
+                if (Player.Me != null)
+                {
+                    if (Player.Me.SpawnTimer > 0)
+                    {
+                        GUIStyle style = new GUIStyle();
+                        style.fontSize = 24;
+                        GUI.Label(new Rect(Screen.width*0.5f, Screen.height*0.5f, 200.0f, 60.0f), "Spawn in " + Player.Me.SpawnTimer, style);
+
+                        //TODO: scoreboard?
+                    }
+                }
                 break;
         }
     }

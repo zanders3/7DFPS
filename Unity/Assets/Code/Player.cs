@@ -5,13 +5,14 @@ using System.Collections.Generic;
 public class Player : NetworkObject
 {
     public static List<Player> Players = new List<Player>();
+    public static Player Me = null;
 
     GameObject playerObject = null;
     Transform head = null;
     string playerName;
     float spawnTimer = 3.0f;
 
-    public int SpawnTimer { get { return (int)spawnTimer; } }
+    public int SpawnTimer { get { return Mathf.CeilToInt(spawnTimer); } }
     public string Name { get { return playerName; } }
 
     public static void Create(string playerName)
@@ -26,6 +27,9 @@ public class Player : NetworkObject
     internal override void OnCreate(NetIncomingMessage msg)
     {
         playerName = msg.ReadString();
+
+        if (IsMe)
+            Me = this;
 
         DebugConsole.Log("CreatePlayer: " + playerName + "(" + IsMe + ")");
         Players.Add(this);
@@ -129,7 +133,6 @@ public class Player : NetworkObject
 
     internal override void Update()
     {
-        DebugConsole.Log("Player Update: " + spawnTimer);
         if (NetworkManager.IsServer)
         {
             if (spawnTimer > 0.0f)
