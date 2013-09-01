@@ -41,6 +41,17 @@ public class Player : NetworkObject
         Players.Add(this);
     }
 
+    internal override void OnDestroy()
+    {
+        if (playerObject != null)
+        {
+            GameObject.Destroy(playerObject);
+            playerObject = null;
+        }
+
+        Players.Remove(this);
+    }
+
     internal override bool ShouldSerializeControlData()
     {
         return true;

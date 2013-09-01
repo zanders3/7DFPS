@@ -30,6 +30,13 @@ public abstract class NetworkObject
     {
     }
 
+    /// <summary>
+    /// Called when the object is destroyed. Called on both client and server.
+    /// </summary>
+    internal virtual void OnDestroy()
+    {
+    }
+
     internal virtual bool ShouldSerializeState()
     {
         return false;

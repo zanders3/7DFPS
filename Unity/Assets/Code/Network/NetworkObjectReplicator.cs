@@ -12,7 +12,8 @@ public class NetworkObjectReplicator
     {
         ReplicateState,
         ReplicateControlData,
-        Create
+        Create,
+        Destroy
     }
     
     private NetPeer server;
@@ -51,13 +52,10 @@ public class NetworkObjectReplicator
         int objectType = (int)msg.ReadByte();
         long owningID = msg.ReadInt64();
 
-        DebugConsole.Log("Construction: " + objectIndex + ", " + objectType + ", " + owningID);
-        DebugConsole.Log(string.Join(" ", msg.Data.Select(b => b.ToString()).ToArray()));
-
         //The server allocates the object index only. An object index of 0 indicates that the object has not had an ID allocated.
         if (isServer && objectIndex == 255)
         {
-            objectIndex = networkObjects.Count + 1;
+            objectIndex = networkObjects.Count;
         }
 
         //Ignore if this object has already been created
@@ -69,8 +67,6 @@ public class NetworkObjectReplicator
         byte[] constructionData = new byte[msg.Data.Length];
         msg.Data.CopyTo(constructionData, 0);
         constructionData[0] = (byte)objectIndex;
-
-        DebugConsole.Log(string.Join(" ", constructionData.Select(b => b.ToString()).ToArray()));
 
         //Broadcast the create message to all clients if this is the server
         if (isServer && server.Connections.Count > 0)
@@ -92,7 +88,7 @@ public class NetworkObjectReplicator
         obj.OnCreate(msg);
 
         //Assign the objects to the replicator
-        DebugConsole.Log("Rep.Create: " + objectIndex + " " + typeIndex[objectType].Name + " " + owningID + " (" + obj.IsMe + ")");
+        DebugConsole.Log("Create: " + objectIndex + " " + typeIndex[objectType].Name + " " + owningID + " (" + obj.IsMe + ")");
         if (obj.IsMe)
             ownedObjects.Add(obj);
 
@@ -127,7 +123,33 @@ public class NetworkObjectReplicator
 
     public void OnDisconnected(long playerID)
     {
-        //TODO: handle disconnects by destroying owned objects
+        if (playerID == NetworkManager.MyID || NetworkManager.IsClient)
+        {
+            for (int i = 0; i<networkObjects.Count; i++)
+                if (networkObjects[i] != null)
+                    networkObjects[i].OnDestroy();
+
+            networkObjects.Clear();
+            ownedObjects.Clear();
+            pendingClientCreateRequests.Clear();
+        }
+        else
+        {
+            for (int i = 0; i<networkObjects.Count; i++)
+            {
+                if (networkObjects[i] != null && networkObjects[i].OwningID == playerID)
+                {
+                    networkObjects[i].OnDestroy();
+                    networkObjects[i] = null;
+
+                    if (isServer && server.Connections.Count > 0)
+                    {
+                        NetOutgoingMessage msg = CreateMessage(i, MessageType.Destroy);
+                        server.SendMessage(msg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -165,7 +187,7 @@ public class NetworkObjectReplicator
         //We cannot sync this object yet because we are waiting for the create message for it.
         if (messageType != MessageType.Create && (objectIndex >= networkObjects.Count || networkObjects[objectIndex] == null))
         {
-            DebugConsole.Log(messageType + " from null object " + objectIndex);
+            DebugConsole.LogError(messageType + " from null object " + objectIndex);
             return;
         }
 
