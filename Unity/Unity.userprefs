@@ -1,15 +1,36 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Code/PlayerMovement.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Code/Weapons/BoxingGloveWeapon.cs">
     <Files>
-      <File FileName="Assets/Code/Network/PlayerClient.cs" Line="65" Column="9" />
-      <File FileName="Assets/Code/PlayerMovement.cs" Line="57" Column="5" />
-      <File FileName="Assets/Code/PlayerInfo.cs" Line="76" Column="25" />
-      <File FileName="Assets/Code/Network/PlayerList.cs" Line="79" Column="31" />
+      <File FileName="Assets/Code/Frontend.cs" Line="164" Column="129" />
+      <File FileName="Assets/Code/Network/NetworkManager.cs" Line="34" Column="32" />
+      <File FileName="Assets/Code/Player.cs" Line="14" Column="5" />
+      <File FileName="Assets/Code/Network/NetworkObject.cs" Line="41" Column="87" />
+      <File FileName="Assets/Code/Network/NetworkObjectReplicator.cs" Line="212" Column="39" />
+      <File FileName="Assets/Code/LevelScripts/WeaponPickup.cs" Line="14" Column="34" />
+      <File FileName="Assets/Code/Lidgren.Network/NetBuffer.cs" Line="20" Column="9" />
+      <File FileName="Assets/Code/Lidgren.Network/NetBuffer.Write.cs" Line="151" Column="3" />
+      <File FileName="Assets/Code/Lidgren.Network/NetPeer.MessagePools.cs" Line="187" Column="3" />
+      <File FileName="Assets/Code/LevelScripts/DeathZone.cs" Line="13" Column="6" />
+      <File FileName="Assets/Code/PlayerCamera.cs" Line="24" Column="3" />
+      <File FileName="Assets/Code/PlayerScript.cs" Line="7" Column="1" />
+      <File FileName="Assets/Code/Weapons/BoxingGloveWeapon.cs" Line="15" Column="12" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True" selected="True" />
+        <State expanded="True">
+          <Node name="Assembly-CSharp" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="Code" expanded="True">
+                <Node name="LevelScripts" expanded="True" />
+                <Node name="Network" expanded="True" />
+                <Node name="Weapons" expanded="True">
+                  <Node name="BoxingGloveWeapon.cs" selected="True" />
+                </Node>
+              </Node>
+            </Node>
+          </Node>
+        </State>
       </Pad>
       <Pad Id="ClassPad">
         <State expanded="True" selected="True" />

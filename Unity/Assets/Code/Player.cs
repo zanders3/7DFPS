@@ -10,7 +10,8 @@ public class Player : NetworkObject
     GameObject playerObject = null;
     Transform head = null;
     string playerName;
-    float spawnTimer = 3.0f;
+    float spawnTimer = 0.0f;
+    Weapon currentWeapon;
 
     public int SpawnTimer { get { return Mathf.CeilToInt(spawnTimer); } }
     public string Name { get { return playerName; } }
@@ -58,7 +59,7 @@ public class Player : NetworkObject
 
         msg.Write(new Vector2(move.x, move.z));
         msg.Write(Input.GetButtonDown("Jump"));
-        //msg.Write(Input.GetButtonDown("Fire"));
+        msg.Write(Input.GetButtonDown("Fire1"));
         msg.Write(head.rotation);
     }
 
@@ -71,7 +72,7 @@ public class Player : NetworkObject
 
         Vector2 move = msg.ReadVector2();
         bool doJump = msg.ReadBoolean();
-        //bool doFire = msg.ReadBoolean();
+        bool doFire = msg.ReadBoolean();
 
         if (!IsMe)
             head.rotation = msg.ReadQuaternion();
@@ -85,6 +86,9 @@ public class Player : NetworkObject
         //Jumping logic
         if (doJump && Physics.Raycast(new Ray(transform.position, -transform.up), 2.0f))
             rigidbody.AddForce(0.0f, 5.0f - rigidbody.velocity.y, 0.0f, ForceMode.VelocityChange);
+
+        if (doFire)
+            currentWeapon.Fire();
     }
 
     internal override bool ShouldSerializeState()
@@ -105,6 +109,7 @@ public class Player : NetworkObject
             msg.Write(false);
             msg.Write(rigidbody.position);
             msg.Write(rigidbody.velocity);
+            msg.Write((byte)currentWeapon.Type);
             msg.Write(head.rotation);
         }
     }
@@ -126,6 +131,7 @@ public class Player : NetworkObject
 
             rigidbody.position = msg.ReadVector3();
             rigidbody.velocity = msg.ReadVector3();
+            currentWeapon.Type = (WeaponType)msg.ReadByte();
             if (!IsMe)
                 head.rotation = msg.ReadQuaternion();
         }
@@ -164,6 +170,8 @@ public class Player : NetworkObject
             head.camera.enabled = true;
             head.GetComponent<AudioListener>().enabled = true;
         }
+
+        currentWeapon = new Weapon(head);
     }
 
     void KillPlayer()
@@ -173,6 +181,7 @@ public class Player : NetworkObject
 
         GameObject.Destroy(playerObject);
         playerObject = null;
+        currentWeapon = null;
     }
 
     public void Kill()
@@ -180,6 +189,14 @@ public class Player : NetworkObject
         if (NetworkManager.IsServer)
         {
             spawnTimer = 3.0f;
+        }
+    }
+
+    public void SetWeapon(WeaponType type)
+    {
+        if (NetworkManager.IsServer && currentWeapon != null)
+        {
+            currentWeapon.Type = type;
         }
     }
 }

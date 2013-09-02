@@ -10,16 +10,7 @@ public enum WeaponType
 public class WeaponPickup : MonoBehaviour
 {
     public WeaponType WeaponType = WeaponType.BoxingGloveGun;
-
-    private Weapon currentWeapon;
-    private float weaponSpawnTimer = 0.0f;
-
-    public float WeaponSpawnTime = 3.0f;
-
-    void SpawnWeapon()
-    {
-
-    }
+    private GameObject currentWeapon;
 
     void OnDrawGizmos()
     {
@@ -31,27 +22,22 @@ public class WeaponPickup : MonoBehaviour
     {
         collider.isTrigger = true;
 
-        /*currentWeapon = ((GameObject)GameObject.Instantiate(Resources.Load("Weapons/" + WeaponType), transform.position, Quaternion.identity)).GetComponent<Weapon>();
+        currentWeapon = (GameObject)GameObject.Instantiate(Resources.Load("Weapons/" + WeaponType), transform.position, Quaternion.identity);
         currentWeapon.transform.parent = transform;
         foreach (var c in currentWeapon.GetComponentsInChildren<Collider>())
-            c.enabled = false;*/
+            c.enabled = false;
     }
 
     void Update()
     {
-        if (currentWeapon == null)
-        {
-            weaponSpawnTimer += Time.deltaTime;
-            if (weaponSpawnTimer >= WeaponSpawnTime)
-                SpawnWeapon();
-        }
+        currentWeapon.transform.Rotate(Vector3.up, Time.deltaTime * 90.0f);
     }
 
     void OnTriggerEnter(Collider other)
     {
-        /*if (!ServerBase.IsClient && other.GetComponent<PlayerMovement>() != null)
+        if (NetworkManager.IsServer && other.GetComponent<PlayerScript>() != null)
         {
-            Frontend.GetServer().SetPlayerWeapon(other.GetComponent<PlayerMovement>().Info, WeaponType);
-        }*/
+            other.GetComponent<PlayerScript>().Player.SetWeapon(WeaponType);
+        }
     }
 }
